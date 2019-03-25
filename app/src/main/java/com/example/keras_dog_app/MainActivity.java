@@ -1,24 +1,23 @@
 package com.example.keras_dog_app;
 
+import android.app.Activity;
+import android.content.Intent;
 import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.Snackbar;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
-import android.view.View;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.view.View;
 import android.widget.ImageView;
 import android.widget.TextView;
 
 import com.example.keras_dog_app.Utils.ImageUtils;
 
 import org.tensorflow.contrib.android.TensorFlowInferenceInterface;
-
-import java.io.InputStream;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -36,11 +35,14 @@ public class MainActivity extends AppCompatActivity {
     //ARRAY TO HOLD THE PREDICTIONS AND FLOAT VALUES TO HOLD THE IMAGE DATA
     float[] PREDICTIONS = new float[1000];
     private float[] floatValues;
-    private int[] INPUT_SIZE = {224,224,3};
+    private int[] INPUT_SIZE = {224, 224, 3};
 
     private TextView resultView;
     private ImageView imageView;
     private Snackbar progressBar;
+
+    //Camera field
+    private static final int CAMERA_REQUEST = 1888;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -50,12 +52,12 @@ public class MainActivity extends AppCompatActivity {
         setSupportActionBar(toolbar);
 
         //initialize tensorflow with the AssetManager and the Model
-        tf = new TensorFlowInferenceInterface(getAssets(),MODEL_PATH);
+        tf = new TensorFlowInferenceInterface(getAssets(), MODEL_PATH);
 
         resultView = findViewById(R.id.textViewResult);
         imageView = findViewById(R.id.imageViewPhoto);
 
-        progressBar = Snackbar.make(imageView,"PROCESSING IMAGE",Snackbar.LENGTH_INDEFINITE);
+        progressBar = Snackbar.make(imageView, "PROCESSING IMAGE", Snackbar.LENGTH_INDEFINITE);
 
         FloatingActionButton fab = findViewById(R.id.fab);
         fab.setOnClickListener(new View.OnClickListener() {
@@ -64,9 +66,10 @@ public class MainActivity extends AppCompatActivity {
                 /*Snackbar.make(view, "Replace with your own action", Snackbar.LENGTH_LONG)
                         .setAction("Action", null).show();*/
 
-                try{
+                try {
 
-                    //READ THE IMAGE FROM ASSETS FOLDER
+                    takePicture();
+                    /*//READ THE IMAGE FROM ASSETS FOLDER
                     InputStream imageStream = getAssets().open("labrador.jpg");
 
                     Bitmap bitmap = BitmapFactory.decodeStream(imageStream);
@@ -75,15 +78,31 @@ public class MainActivity extends AppCompatActivity {
 
                     progressBar.show();
 
-                    predict(bitmap);
-                }
-                catch (Exception e){
+                    predict(bitmap);*/
+
+                } catch (Exception e) {
 
                 }
             }
         });
 
 
+    }
+
+    private void takePicture() {
+        Intent cameraIntent = new Intent(android.provider.MediaStore.ACTION_IMAGE_CAPTURE);
+        startActivityForResult(cameraIntent, CAMERA_REQUEST);
+    }
+
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+        if (requestCode == CAMERA_REQUEST && resultCode == Activity.RESULT_OK) {
+            Bitmap picture = (Bitmap) data.getExtras().get("data");//this is your bitmap image and now you can do whatever you want with this
+            imageView.setImageBitmap(picture);
+            //Proceed to inference
+            predict(picture);
+        }
     }
 
     @Override
@@ -109,53 +128,53 @@ public class MainActivity extends AppCompatActivity {
     }
 
     //FUNCTION TO COMPUTE THE MAXIMUM PREDICTION AND ITS CONFIDENCE
-    public Object[] argmax(float[] array){
+    public Object[] argmax(float[] array) {
 
 
         int best = -1;
         float best_confidence = 0.0f;
 
-        for(int i = 0;i < array.length;i++){
+        for (int i = 0; i < array.length; i++) {
 
             float value = array[i];
 
-            if (value > best_confidence){
+            if (value > best_confidence) {
 
                 best_confidence = value;
                 best = i;
             }
         }
 
-        return new Object[]{best,best_confidence};
+        return new Object[]{best, best_confidence};
 
 
     }
 
     //Class that takes in a bitmap and performs inference
-    public void predict(final Bitmap bitmap){
+    public void predict(final Bitmap bitmap) {
 
 
         //Runs inference in background thread
-        new AsyncTask<Integer,Integer,Integer>(){
+        new AsyncTask<Integer, Integer, Integer>() {
 
             @Override
 
-            protected Integer doInBackground(Integer ...params){
+            protected Integer doInBackground(Integer... params) {
 
                 //Resize the image into 224 x 224
-                Bitmap resized_image = ImageUtils.processBitmap(bitmap,224);
+                Bitmap resized_image = ImageUtils.processBitmap(bitmap, 224);
 
                 //Normalize the pixels
-                floatValues = ImageUtils.normalizeBitmap(resized_image,224,127.5f,1.0f);
+                floatValues = ImageUtils.normalizeBitmap(resized_image, 224, 127.5f, 1.0f);
 
                 //Pass input into the tensorflow
-                tf.feed(INPUT_NAME,floatValues,1,224,224,3);
+                tf.feed(INPUT_NAME, floatValues, 1, 224, 224, 3);
 
                 //compute predictions
                 tf.run(new String[]{OUTPUT_NAME});
 
                 //copy the output into the PREDICTIONS array
-                tf.fetch(OUTPUT_NAME,PREDICTIONS);
+                tf.fetch(OUTPUT_NAME, PREDICTIONS);
 
                 //Obtained highest prediction
                 Object[] results = argmax(PREDICTIONS);
@@ -165,12 +184,12 @@ public class MainActivity extends AppCompatActivity {
                 float confidence = (Float) results[1];
 
 
-                try{
+                try {
 
-                    final String conf = String.valueOf(confidence * 100).substring(0,5);
+                    final String conf = String.valueOf(confidence * 100).substring(0, 5);
 
                     //Convert predicted class index into actual label name
-                    final String label = ImageUtils.getLabel(getAssets().open("labels.json"),class_index);
+                    final String label = ImageUtils.getLabel(getAssets().open("labels.json"), class_index);
 
                     //Display result on UI
                     runOnUiThread(new Runnable() {
@@ -183,9 +202,7 @@ public class MainActivity extends AppCompatActivity {
                         }
                     });
 
-                }
-
-                catch (Exception e){
+                } catch (Exception e) {
 
 
                 }
@@ -193,7 +210,6 @@ public class MainActivity extends AppCompatActivity {
 
                 return 0;
             }
-
 
 
         }.execute(0);
