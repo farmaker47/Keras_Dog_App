@@ -1,14 +1,12 @@
 package com.example.keras_dog_app.Utils;
 
-import android.content.res.AssetManager;
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import android.graphics.Matrix;
-import android.os.Environment;
-import java.io.File;
-import java.io.FileOutputStream;
+
+import org.json.JSONObject;
+
 import java.io.InputStream;
-import org.json.*;
 
 /**
  * Utility class for manipulating images.
@@ -18,14 +16,14 @@ public class ImageUtils {
      * Returns a transformation matrix from one reference frame into another.
      * Handles cropping (if maintaining aspect ratio is desired) and rotation.
      *
-     * @param srcWidth Width of source frame.
-     * @param srcHeight Height of source frame.
-     * @param dstWidth Width of destination frame.
-     * @param dstHeight Height of destination frame.
-     * @param applyRotation Amount of rotation to apply from one frame to another.
-     *  Must be a multiple of 90.
+     * @param srcWidth            Width of source frame.
+     * @param srcHeight           Height of source frame.
+     * @param dstWidth            Width of destination frame.
+     * @param dstHeight           Height of destination frame.
+     * @param applyRotation       Amount of rotation to apply from one frame to another.
+     *                            Must be a multiple of 90.
      * @param maintainAspectRatio If true, will ensure that scaling in x and y remains constant,
-     * cropping the image if necessary.
+     *                            cropping the image if necessary.
      * @return The transformation fulfilling the desired requirements.
      */
     public static Matrix getTransformationMatrix(
@@ -77,14 +75,14 @@ public class ImageUtils {
     }
 
 
-    public static Bitmap processBitmap(Bitmap source,int size){
+    public static Bitmap processBitmap(Bitmap source, int size) {
 
         int image_height = source.getHeight();
         int image_width = source.getWidth();
 
         Bitmap croppedBitmap = Bitmap.createBitmap(size, size, Bitmap.Config.ARGB_8888);
 
-        Matrix frameToCropTransformations = getTransformationMatrix(image_width,image_height,size,size,0,false);
+        Matrix frameToCropTransformations = getTransformationMatrix(image_width, image_height, size, size, 0, false);
         Matrix cropToFrameTransformations = new Matrix();
         frameToCropTransformations.invert(cropToFrameTransformations);
 
@@ -96,7 +94,7 @@ public class ImageUtils {
 
     }
 
-    public static float[] normalizeBitmap(Bitmap source,int size,float mean,float std){
+    public static float[] normalizeBitmap(Bitmap source, int size, float mean, float std) {
 
         float[] output = new float[size * size * 3];
 
@@ -105,26 +103,26 @@ public class ImageUtils {
         source.getPixels(intValues, 0, source.getWidth(), 0, 0, source.getWidth(), source.getHeight());
         for (int i = 0; i < intValues.length; ++i) {
             final int val = intValues[i];
-            output[i * 3] = (((val >> 16) & 0xFF) - mean)/std;
-            output[i * 3 + 1] = (((val >> 8) & 0xFF) - mean)/std;
-            output[i * 3 + 2] = ((val & 0xFF) - mean)/std;
+            output[i * 3] = (((val >> 16) & 0xFF) - mean) / std;
+            output[i * 3 + 1] = (((val >> 8) & 0xFF) - mean) / std;
+            output[i * 3 + 2] = ((val & 0xFF) - mean) / std;
         }
 
         return output;
 
     }
 
-    public static Object[] argmax(float[] array){
+    public static Object[] argmax(float[] array) {
 
 
         int best = -1;
         float best_confidence = 0.0f;
 
-        for(int i = 0;i < array.length;i++){
+        for (int i = 0; i < array.length; i++) {
 
             float value = array[i];
 
-            if (value > best_confidence){
+            if (value > best_confidence) {
 
                 best_confidence = value;
                 best = i;
@@ -132,14 +130,13 @@ public class ImageUtils {
         }
 
 
-
-        return new Object[]{best,best_confidence};
+        return new Object[]{best, best_confidence};
 
 
     }
 
 
-    public static String getLabel( InputStream jsonStream,int index){
+    public static String getLabel(InputStream jsonStream, int index) {
         String label = "";
         try {
 
@@ -147,18 +144,13 @@ public class ImageUtils {
             jsonStream.read(jsonData);
             jsonStream.close();
 
-            String jsonString = new String(jsonData,"utf-8");
+            String jsonString = new String(jsonData, "utf-8");
 
             JSONObject object = new JSONObject(jsonString);
 
             label = object.getString(String.valueOf(index));
 
-
-
-        }
-        catch (Exception e){
-
-
+        } catch (Exception e) {
         }
         return label;
     }

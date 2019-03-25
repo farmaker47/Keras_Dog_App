@@ -36,7 +36,6 @@ public class MainActivity extends AppCompatActivity {
     //ARRAY TO HOLD THE PREDICTIONS AND FLOAT VALUES TO HOLD THE IMAGE DATA
     float[] PREDICTIONS = new float[1000];
     private float[] floatValues;
-    /*private int[] INPUT_SIZE = {224,224,3};*/
     private int[] INPUT_SIZE = {224,224,3};
 
     private TextView resultView;
@@ -172,8 +171,6 @@ public class MainActivity extends AppCompatActivity {
 
                     //Convert predicted class index into actual label name
                     final String label = ImageUtils.getLabel(getAssets().open("labels.json"),class_index);
-
-
 
                     //Display result on UI
                     runOnUiThread(new Runnable() {
