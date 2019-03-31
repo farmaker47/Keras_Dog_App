@@ -28,7 +28,9 @@ public class MainActivity extends AppCompatActivity {
 
     //PATH TO OUR MODEL FILE AND NAMES OF THE INPUT AND OUTPUT NODES
     private String MODEL_PATH = "file:///android_asset/keras_dogs.pb";
-    private String INPUT_NAME = "global_average_pooling2d_1_input";
+    /*private String INPUT_NAME = "global_average_pooling2d_1_input";*/
+    /*private String INPUT_NAME = "resnet50_input";*/
+    private String INPUT_NAME = "conv2d_45_input";
     private String OUTPUT_NAME = "output_1";
     private TensorFlowInferenceInterface tf;
 
